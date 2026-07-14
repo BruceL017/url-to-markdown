@@ -25,6 +25,7 @@ export interface ConvertCommandOptions {
   browserPath?: string;
   chromeProfileDir?: string;
   headless: boolean;
+  quiet: boolean;
   downloadMedia: boolean;
   mediaDir?: string;
   timeoutMs: number;
@@ -128,6 +129,9 @@ export async function runConvertCommand(options: ConvertCommandOptions): Promise
   if (options.downloadMedia && !options.output) {
     throw new Error("--download-media requires --output so media paths can be rewritten relative to the saved output file");
   }
+  if (options.quiet && !options.output) {
+    throw new Error("--quiet requires --output so the captured content is not discarded");
+  }
 
   const url = normalizeUrl(options.url);
   const runtime = await openRuntime(options, Boolean(options.debugDir));
@@ -210,6 +214,10 @@ export async function runConvertCommand(options: ConvertCommandOptions): Promise
     if (options.debugDir) {
       await writeDebugArtifacts(options.debugDir, document, markdown, runtime.browser, runtime.network);
       logger.info(`Wrote debug artifacts to ${options.debugDir}`);
+    }
+
+    if (options.quiet) {
+      return;
     }
 
     if (options.format === "json") {

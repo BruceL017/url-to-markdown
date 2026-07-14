@@ -5,6 +5,21 @@ describe("parseArgs", () => {
   test("defaults to markdown output", () => {
     const options = parseArgs(["bun", "src/cli.ts", "https://example.com"]);
     expect(options.format).toBe("markdown");
+    expect(options.quiet).toBe(false);
+  });
+
+  test("parses quiet file output", () => {
+    const options = parseArgs([
+      "bun",
+      "src/cli.ts",
+      "https://example.com",
+      "--output",
+      "article.md",
+      "--quiet",
+    ]);
+
+    expect(options.output).toBe("article.md");
+    expect(options.quiet).toBe(true);
   });
 
   test("parses explicit json output format", () => {
@@ -73,6 +88,7 @@ describe("parseArgs", () => {
   test("documents only non-interactive capture options", () => {
     expect(HELP_TEXT).toContain("url-to-markdown");
     expect(HELP_TEXT).toContain("--format <type>");
+    expect(HELP_TEXT).toContain("--quiet");
     expect(HELP_TEXT).toContain("--download-media");
     expect(HELP_TEXT).toContain("--cdp-url <url>");
     expect(HELP_TEXT).toContain("--chrome-profile-dir <path>");

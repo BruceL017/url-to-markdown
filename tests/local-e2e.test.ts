@@ -99,11 +99,13 @@ describe("local browser capture", () => {
         "--headless",
         "--output",
         markdownPath,
+        "--quiet",
         "--download-media",
         "--chrome-profile-dir",
         profileDir,
       ], tempRoot);
       expect(markdownRun.exitCode, markdownRun.stderr).toBe(0);
+      expect(markdownRun.stdout).toBe("");
 
       const markdown = fs.readFileSync(markdownPath, "utf8");
       expect(markdown).toContain("Local Capture Fixture");
@@ -117,10 +119,12 @@ describe("local browser capture", () => {
         "--json",
         "--output",
         jsonPath,
+        "--quiet",
         "--chrome-profile-dir",
         profileDir,
       ], tempRoot);
       expect(jsonRun.exitCode, jsonRun.stderr).toBe(0);
+      expect(jsonRun.stdout).toBe("");
 
       const payload = JSON.parse(fs.readFileSync(jsonPath, "utf8"));
       expect(payload.adapter).toBe("generic");

@@ -24,8 +24,8 @@ CREATE A TODO LIST FOR THE TASKS BELOW, with one TODO for each numbered stage, t
 2. Resolve preferences using **Preferences**. If no `EXTEND.md` exists, run the blocking first-time setup, save the selected values, then resume this procedure.
 3. Validate the URL and construct a non-conflicting output path using **Output Path Generation**. If the URL is missing or is not HTTP/HTTPS, stop and request a valid URL.
 4. Resolve Bun, Chrome, and CLI dependencies as specified in **CLI Setup**. Select the adapter automatically unless the user explicitly requests a supported adapter. Apply explicit CLI arguments before preferences, and preferences before defaults.
-5. Run the non-interactive capture and immediately apply the **Agent Quality Gate**. If the CLI reports a login or verification wall, or the saved content is a login, CAPTCHA, shell, or low-quality result, delete any unusable capture, report that the page is unsupported, and stop. NEVER retry through login or manual browser interaction.
-6. Apply the media workflow in [references/adapters.md](references/adapters.md). If preferences say `ask`, prompt only when the saved Markdown contains remote image or video URLs.
+5. Run the non-interactive capture with `--quiet` when saving via `--output`, then immediately apply the **Agent Quality Gate**. If the CLI reports a login or verification wall, or the saved content is a login, CAPTCHA, shell, or low-quality result, delete any unusable capture, report that the page is unsupported, and stop. NEVER retry through login or manual browser interaction.
+6. Apply the media workflow in [references/adapters.md](references/adapters.md). If preferences say `ask`, prompt only when the saved Markdown contains remote image or video URLs, including a Frontmatter `coverImage`.
 7. Confirm that the saved title and body match the target page, then report the output path, selected adapter, media result, and any unverified limitation. Produce that capture report and end.
 
 Failure exits:
@@ -115,16 +115,16 @@ Full template: [references/config/first-time-setup.md](references/config/first-t
 ${READER} <url>
 
 # Save to file
-${READER} <url> --output article.md
+${READER} <url> --output article.md --quiet
 
 # Save with media download
-${READER} <url> --output article.md --download-media
+${READER} <url> --output article.md --quiet --download-media
 
 # JSON output
-${READER} <url> --format json --output article.json
+${READER} <url> --format json --output article.json --quiet
 
 # Force specific adapter
-${READER} <url> --adapter youtube --output transcript.md
+${READER} <url> --adapter youtube --output transcript.md --quiet
 ```
 
 <example>
@@ -157,6 +157,7 @@ Reason: this Skill supports only non-interactive public-page capture; access blo
 |--------|-------------|
 | `<url>` | URL to fetch |
 | `--output <path>` | Output file path (default: stdout) |
+| `--quiet` | Do not echo captured content to stdout; requires `--output` |
 | `--format <type>` | Output format: `markdown` (default) or `json` |
 | `--json` | Shorthand for `--format json` |
 | `--adapter <name>` | Force adapter: `x`, `youtube`, `hn`, or `generic` (default: auto-detect) |
