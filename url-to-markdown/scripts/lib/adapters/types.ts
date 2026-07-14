@@ -9,43 +9,14 @@ export interface AdapterInput {
   url: URL;
 }
 
-export type LoginState = "logged_in" | "logged_out" | "unknown";
-export type InteractionKind = "login" | "cloudflare" | "recaptcha" | "hcaptcha" | "captcha" | "challenge";
-
-export interface AdapterLoginInfo {
-  provider: string;
-  state: LoginState;
-  required?: boolean;
-  username?: string;
-  reason?: string;
-}
-
-export interface WaitForInteractionRequest {
-  type: "wait_for_interaction";
-  kind: InteractionKind;
-  provider: string;
-  prompt: string;
-  reason?: string;
-  timeoutMs?: number;
-  pollIntervalMs?: number;
-  requiresVisibleBrowser?: boolean;
-}
-
 export type AdapterProcessResult =
   | {
       status: "ok";
       document: ExtractedDocument;
       media?: MediaAsset[];
-      login?: AdapterLoginInfo;
-    }
-  | {
-      status: "needs_interaction";
-      interaction: WaitForInteractionRequest;
-      login?: AdapterLoginInfo;
     }
   | {
       status: "no_document";
-      login?: AdapterLoginInfo;
     };
 
 export interface AdapterContext {
@@ -56,16 +27,12 @@ export interface AdapterContext {
   log: Logger;
   outputFormat: "markdown" | "json";
   timeoutMs: number;
-  interactive: boolean;
   downloadMedia: boolean;
 }
 
 export interface Adapter {
   name: string;
   match(input: AdapterInput): boolean;
-  checkLogin?(context: AdapterContext): Promise<AdapterLoginInfo>;
-  exportCookies?(context: AdapterContext, profileDir?: string): Promise<boolean>;
-  restoreCookies?(context: AdapterContext, profileDir?: string): Promise<boolean>;
   downloadMedia?(request: MediaDownloadRequest): Promise<MediaDownloadResult>;
   process(context: AdapterContext): Promise<AdapterProcessResult>;
 }

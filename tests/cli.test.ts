@@ -17,21 +17,6 @@ describe("parseArgs", () => {
     expect(options.format).toBe("json");
   });
 
-  test("parses --wait-for interaction", () => {
-    const options = parseArgs(["bun", "src/cli.ts", "https://example.com", "--wait-for", "interaction"]);
-    expect(options.waitMode).toBe("interaction");
-  });
-
-  test("parses --wait-for force", () => {
-    const options = parseArgs(["bun", "src/cli.ts", "https://example.com", "--wait-for", "force"]);
-    expect(options.waitMode).toBe("force");
-  });
-
-  test("maps legacy wait flags to interaction mode", () => {
-    const options = parseArgs(["bun", "src/cli.ts", "https://example.com", "--wait-for-interaction"]);
-    expect(options.waitMode).toBe("interaction");
-  });
-
   test("parses media download options", () => {
     const options = parseArgs([
       "bun",
@@ -46,10 +31,37 @@ describe("parseArgs", () => {
     expect(options.mediaDir).toBe("./assets");
   });
 
-  test("rejects invalid wait modes", () => {
-    expect(() =>
-      parseArgs(["bun", "src/cli.ts", "https://example.com", "--wait-for", "unknown"]),
-    ).toThrow("Invalid wait mode");
+  test("parses reusable Chrome options", () => {
+    const options = parseArgs([
+      "bun",
+      "src/cli.ts",
+      "https://example.com",
+      "--cdp-url",
+      "http://127.0.0.1:9222",
+      "--chrome-profile-dir",
+      "/tmp/url-to-markdown-profile",
+    ]);
+
+    expect(options.cdpUrl).toBe("http://127.0.0.1:9222");
+    expect(options.chromeProfileDir).toBe("/tmp/url-to-markdown-profile");
+  });
+
+  test("rejects removed login and interaction options", () => {
+    const removedOptions = [
+      ["--wait-for", "interaction"],
+      ["--wait-for-interaction"],
+      ["--wait-for-login"],
+      ["--interaction-timeout", "1000"],
+      ["--interaction-poll-interval", "1000"],
+      ["--login-timeout", "1000"],
+      ["--login-poll-interval", "1000"],
+    ];
+
+    for (const removed of removedOptions) {
+      expect(() =>
+        parseArgs(["bun", "src/cli.ts", "https://example.com", ...removed]),
+      ).toThrow(`Unknown option: ${removed[0]}`);
+    }
   });
 
   test("rejects invalid output formats", () => {
@@ -58,12 +70,14 @@ describe("parseArgs", () => {
     ).toThrow("Invalid output format");
   });
 
-  test("documents wait modes in help text", () => {
+  test("documents only non-interactive capture options", () => {
     expect(HELP_TEXT).toContain("url-to-markdown");
     expect(HELP_TEXT).toContain("--format <type>");
-    expect(HELP_TEXT).toContain("--wait-for <mode>");
     expect(HELP_TEXT).toContain("--download-media");
-    expect(HELP_TEXT).toContain("force: start visible Chrome, then auto-continue");
-    expect(HELP_TEXT).toContain("or continue immediately when you press Enter");
+    expect(HELP_TEXT).toContain("--cdp-url <url>");
+    expect(HELP_TEXT).toContain("--chrome-profile-dir <path>");
+    expect(HELP_TEXT).not.toContain("--wait-for");
+    expect(HELP_TEXT.toLowerCase()).not.toContain("login");
+    expect(HELP_TEXT.toLowerCase()).not.toContain("interaction");
   });
 });

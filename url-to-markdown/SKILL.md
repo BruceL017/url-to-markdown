@@ -1,6 +1,6 @@
 ---
 name: url-to-markdown
-description: Fetch a public or authenticated webpage URL in a rendered Chrome browser and save it as clean Markdown or JSON. Use when the user asks to capture, archive, download, or convert a webpage or URL, including X/Twitter posts, YouTube transcripts, Hacker News threads, generic pages, media downloads, and pages requiring login or CAPTCHA interaction. Do not use for local-document conversion, content-only summarization, or publishing Markdown.
+description: Fetch a public webpage URL that requires no account login or manual verification in a rendered Chrome browser and save it as clean Markdown or JSON. Use when the user asks to capture, archive, download, or convert generic pages, anonymously accessible X/Twitter posts, YouTube transcripts, Hacker News threads, or their media. Do not use for private/authenticated pages, login or CAPTCHA workflows, local-document conversion, content-only summarization, or publishing Markdown.
 ---
 
 # URL to Markdown
@@ -10,9 +10,11 @@ Fetch a URL through the bundled `url-to-markdown` CLI (Chrome CDP + site-specifi
 ## Scope Guard
 
 - Require one HTTP or HTTPS URL.
+- Capture only pages that require no login or manual verification. NEVER ask the user to sign in, solve a CAPTCHA, or operate the browser.
 - Preserve the source content; do not summarize, rewrite, translate, or publish it.
 - Use the built-in `x`, `youtube`, `hn`, or `generic` adapter. Do not invent site-specific extraction logic outside the bundled CLI.
 - Write only the requested capture, optional media, debug artifacts, and the preference file created through the required first-time setup.
+- Treat `--cdp-url` and Chrome profile contents as user-supplied browser state. NEVER export, restore, or manage authentication state.
 
 ## Guarded Procedure
 
@@ -22,7 +24,7 @@ CREATE A TODO LIST FOR THE TASKS BELOW, with one TODO for each numbered stage, t
 2. Resolve preferences using **Preferences**. If no `EXTEND.md` exists, run the blocking first-time setup, save the selected values, then resume this procedure.
 3. Validate the URL and construct a non-conflicting output path using **Output Path Generation**. If the URL is missing or is not HTTP/HTTPS, stop and request a valid URL.
 4. Resolve Bun, Chrome, and CLI dependencies as specified in **CLI Setup**. Select the adapter automatically unless the user explicitly requests a supported adapter. Apply explicit CLI arguments before preferences, and preferences before defaults.
-5. Run the default headless capture and immediately apply the **Agent Quality Gate**. If JSON reports `status: needs_interaction`, or the Markdown shows a login, CAPTCHA, shell, or low-quality result, use `--wait-for interaction` for a detected login/CAPTCHA gate or `--wait-for force` for manual browsing and lazy loading; tell the user what action is required.
+5. Run the non-interactive capture and immediately apply the **Agent Quality Gate**. If the CLI reports a login or verification wall, or the saved content is a login, CAPTCHA, shell, or low-quality result, delete any unusable capture, report that the page is unsupported, and stop. NEVER retry through login or manual browser interaction.
 6. Apply the media workflow in [references/adapters.md](references/adapters.md). If preferences say `ask`, prompt only when the saved Markdown contains remote image or video URLs.
 7. Confirm that the saved title and body match the target page, then report the output path, selected adapter, media result, and any unverified limitation. Produce that capture report and end.
 
@@ -30,7 +32,7 @@ Failure exits:
 
 - Missing dependency installation or browser launch failure → stop with the failing command and error.
 - Timeout after one retry with `--timeout 60000` → stop and report the URL and timeout used.
-- Login or CAPTCHA not completed before the interaction timeout → stop without claiming success; keep any debug artifacts the user requested.
+- Login, CAPTCHA, Cloudflare, or another access block → stop, report the CLI error, and do not claim or preserve a successful capture.
 - Unsupported forced adapter → stop and list `x`, `youtube`, `hn`, and `generic`.
 
 ## User Input Tools
@@ -109,7 +111,7 @@ Full template: [references/config/first-time-setup.md](references/config/first-t
 ## Usage
 
 ```bash
-# Default: headless capture, markdown to stdout
+# Default: non-interactive capture, markdown to stdout
 ${READER} <url>
 
 # Save to file
@@ -117,12 +119,6 @@ ${READER} <url> --output article.md
 
 # Save with media download
 ${READER} <url> --output article.md --download-media
-
-# Wait for interaction (login/CAPTCHA) — auto-detect and continue
-${READER} <url> --wait-for interaction --output article.md
-
-# Wait for interaction — manual control (Enter to continue)
-${READER} <url> --wait-for force --output article.md
 
 # JSON output
 ${READER} <url> --format json --output article.json
@@ -149,6 +145,12 @@ WRONG: Create `EXTEND.md` with silent defaults when no preference file exists.
 Reason: first-time preference setup is blocking and requires the user's media, output, and save-location choices.
 </bad-example>
 
+<bad-example>
+WRONG: When capture reaches a login or verification wall, open a visible browser and ask the user to complete it.
+
+Reason: this Skill supports only non-interactive public-page capture; access blocks are terminal failures.
+</bad-example>
+
 ## Options
 
 | Option | Description |
@@ -159,12 +161,7 @@ Reason: first-time preference setup is blocking and requires the user's media, o
 | `--json` | Shorthand for `--format json` |
 | `--adapter <name>` | Force adapter: `x`, `youtube`, `hn`, or `generic` (default: auto-detect) |
 | `--headless` | Force headless Chrome (no visible window) |
-| `--wait-for <mode>` | Interaction wait mode: `interaction` or `force`; omit this option for the default non-interactive mode |
-| `--wait-for-interaction` | Alias for `--wait-for interaction` |
-| `--wait-for-login` | Alias for `--wait-for interaction` |
 | `--timeout <ms>` | Page load timeout (default: 30000) |
-| `--interaction-timeout <ms>` | Login/CAPTCHA wait timeout (default: 600000 = 10 min) |
-| `--interaction-poll-interval <ms>` | Poll interval for interaction checks (default: 1500) |
 | `--download-media` | Download images/videos to local `imgs/` and `videos/`, rewrite markdown links. Requires `--output` |
 | `--media-dir <dir>` | Base directory for downloaded media (default: same as `--output` directory) |
 | `--cdp-url <url>` | Reuse existing Chrome DevTools Protocol endpoint |
@@ -174,9 +171,9 @@ Reason: first-time preference setup is blocking and requires the user's media, o
 
 ## Agent Quality Gate
 
-**CRITICAL**: treat default headless capture as provisional. Some sites render differently in headless mode and can silently return low-quality content without failing the CLI.
+**CRITICAL**: treat every capture as provisional. Some sites can silently return low-quality content without failing the CLI.
 
-After every headless run, inspect the saved Markdown or the JSON `markdown` field. See [references/quality-gate.md](references/quality-gate.md) for the full checklist, recovery workflow, and capture-mode table. Read it whenever a run looks suspicious or the user asks about login/CAPTCHA handling.
+After every run, inspect the saved Markdown or the JSON `markdown` field. See [references/quality-gate.md](references/quality-gate.md) for the full checklist and failure workflow. Read it whenever a run looks suspicious or an access block appears.
 
 ## Output Path Generation
 
@@ -201,7 +198,7 @@ See [references/adapters.md](references/adapters.md) for the adapter catalog (X,
 |----------|-------------|
 | `URL_TO_MARKDOWN_CHROME_PROFILE_DIR` | Chrome user data directory (can also use `--chrome-profile-dir`) |
 
-**Troubleshooting**: Chrome not found → use `--browser-path`. Timeout → increase `--timeout`. Login/CAPTCHA → `--wait-for interaction`. Debug → `--debug-dir` to inspect captured HTML and network logs.
+**Troubleshooting**: Chrome not found → use `--browser-path`. Timeout on a public page → increase `--timeout`. Login/CAPTCHA → report unsupported and stop. Debug → `--debug-dir` to inspect successful captures.
 
 ## Extension Support
 

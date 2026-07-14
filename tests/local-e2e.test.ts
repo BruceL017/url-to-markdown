@@ -17,6 +17,38 @@ const server = Bun.serve({
     if (url.pathname === "/fixture.png") {
       return new Response(PIXEL, { headers: { "content-type": "image/png" } });
     }
+    if (url.pathname === "/generic-login-wall" || url.pathname === "/user/status/123") {
+      return new Response(
+        `<!doctype html><html><head><title>Sign in</title></head><body>
+          <main><h1>Sign in</h1><form><input name="username"><input type="password"></form></main>
+        </body></html>`,
+        { headers: { "content-type": "text/html; charset=utf-8" } },
+      );
+    }
+    if (url.pathname === "/cloudflare") {
+      return new Response(
+        `<!doctype html><html><head><title>Just a moment...</title></head><body>
+          <main id="challenge-running">Checking your browser before accessing this page</main>
+        </body></html>`,
+        { headers: { "content-type": "text/html; charset=utf-8" } },
+      );
+    }
+    if (url.pathname === "/recaptcha") {
+      return new Response(
+        `<!doctype html><html><head><title>Verification</title></head><body>
+          <main><div class="g-recaptcha">Please complete reCAPTCHA</div></main>
+        </body></html>`,
+        { headers: { "content-type": "text/html; charset=utf-8" } },
+      );
+    }
+    if (url.pathname === "/hcaptcha") {
+      return new Response(
+        `<!doctype html><html><head><title>Verification</title></head><body>
+          <main><div class="h-captcha">Please complete hCaptcha</div></main>
+        </body></html>`,
+        { headers: { "content-type": "text/html; charset=utf-8" } },
+      );
+    }
     return new Response(
       `<!doctype html>
       <html>
@@ -95,6 +127,39 @@ describe("local browser capture", () => {
       expect(payload.status).toBe("ok");
       expect(payload.document.title).toBe("Local Capture Fixture");
       expect(payload.markdown).toContain("unique local paragraph");
+    } finally {
+      fs.rmSync(tempRoot, { recursive: true, force: true });
+    }
+  }, 60_000);
+
+  test("rejects login and verification walls without writing output", async () => {
+    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "url-to-markdown-blocked-"));
+    const profileDir = path.join(tempRoot, "profile");
+    const blockedCases = [
+      { name: "generic-login", path: "/generic-login-wall", extra: [] },
+      { name: "x-login", path: "/user/status/123", extra: ["--adapter", "x"] },
+      { name: "cloudflare", path: "/cloudflare", extra: [] },
+      { name: "recaptcha", path: "/recaptcha", extra: [] },
+      { name: "hcaptcha-json", path: "/hcaptcha", extra: ["--json"] },
+    ];
+
+    try {
+      for (const blocked of blockedCases) {
+        const outputPath = path.join(tempRoot, `${blocked.name}.md`);
+        const result = await runCli([
+          `http://127.0.0.1:${server.port}${blocked.path}`,
+          "--headless",
+          "--output",
+          outputPath,
+          "--chrome-profile-dir",
+          profileDir,
+          ...blocked.extra,
+        ], tempRoot);
+
+        expect(result.exitCode).not.toBe(0);
+        expect(result.stderr).toContain("supports only pages that require no login or manual verification");
+        expect(fs.existsSync(outputPath)).toBe(false);
+      }
     } finally {
       fs.rmSync(tempRoot, { recursive: true, force: true });
     }

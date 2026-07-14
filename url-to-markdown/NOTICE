@@ -18,10 +18,16 @@ directories, Chrome profile namespace, and environment variable. Legacy
 baoyu-prefixed configuration is intentionally not read.
 
 The extraction adapters, rendered-browser workflow, Markdown and JSON output,
-media handling, and interaction modes remain functionally equivalent to the
-pinned source. Repository-level documentation, install-layout checks, local
-browser smoke tests, and Agent UI metadata were added for the standalone
-distribution. No automatic upstream synchronization is configured.
+and media handling were initially preserved from the pinned source.
+Repository-level documentation, install-layout checks, local browser smoke
+tests, and Agent UI metadata were added for the standalone distribution.
+
+A subsequent standalone revision removed interactive login and verification
+flows, X session-cookie sidecars, and login/interaction fields from JSON
+output. Anonymous X capture and the other public-page adapters remain. Chrome
+profile and CDP reuse remain available as general browser interfaces and may
+reuse state supplied by the user. No automatic upstream synchronization is
+configured.
 
 The complete MIT license is included in LICENSE at both the repository root
 and inside the installable Skill directory.

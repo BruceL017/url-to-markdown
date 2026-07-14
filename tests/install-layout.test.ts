@@ -34,6 +34,7 @@ describe("installable Skill layout", () => {
       "scripts/package.json",
       "scripts/bun.lock",
       "scripts/lib/cli.ts",
+      "scripts/lib/browser/access-blocks.ts",
     ];
 
     for (const relativePath of required) {
@@ -53,6 +54,40 @@ describe("installable Skill layout", () => {
       const contents = fs.readFileSync(file, "utf8");
       const legacyBrand = ["bao", "yu"].join("");
       expect(contents).not.toMatch(new RegExp(legacyBrand, "i"));
+    }
+  });
+
+  test("contains no login-session or interaction runtime", () => {
+    const removedFiles = [
+      "scripts/lib/browser/cookie-sidecar.ts",
+      "scripts/lib/browser/interaction-gates.ts",
+      "scripts/lib/adapters/x/login.ts",
+      "scripts/lib/adapters/x/session.ts",
+    ];
+
+    for (const relativePath of removedFiles) {
+      expect(fs.existsSync(path.join(SKILL_ROOT, relativePath))).toBe(false);
+    }
+
+    const runtimeFiles = filesUnder(path.join(SKILL_ROOT, "scripts")).filter(
+      (file) => !file.includes(`${path.sep}node_modules${path.sep}`),
+    );
+    const forbiddenIdentifiers = [
+      "auth_token",
+      "needs_interaction",
+      "wait_for_interaction",
+      "checkLogin",
+      "exportCookies",
+      "restoreCookies",
+      "--wait-for-login",
+      "--login-timeout",
+    ];
+
+    for (const file of runtimeFiles) {
+      const contents = fs.readFileSync(file, "utf8");
+      for (const identifier of forbiddenIdentifiers) {
+        expect(contents).not.toContain(identifier);
+      }
     }
   });
 });

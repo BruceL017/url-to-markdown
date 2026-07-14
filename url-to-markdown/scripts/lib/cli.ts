@@ -4,7 +4,6 @@ import {
   runConvertCommand,
   type ConvertCommandOptions,
   type OutputFormat,
-  type WaitMode,
 } from "./commands/convert";
 
 export const HELP_TEXT = `
@@ -27,20 +26,6 @@ Options:
                         Chrome user data dir. Defaults to URL_TO_MARKDOWN_CHROME_PROFILE_DIR
                         or the platform data directory under url-to-markdown/chrome-profile.
   --headless            Launch a temporary headless Chrome if needed
-  --wait-for <mode>     Wait mode: interaction | force
-                        interaction: start visible Chrome and auto-wait only when login or verification is required
-                        force: start visible Chrome, then auto-continue after it detects login/challenge progress
-                               or continue immediately when you press Enter
-  --wait-for-interaction
-                        Alias for --wait-for interaction
-  --wait-for-login      Alias for --wait-for interaction
-  --interaction-timeout <ms>
-                        How long to wait for manual interaction before failing (default: 600000)
-  --interaction-poll-interval <ms>
-                        How often to poll interaction state while waiting (default: 1500)
-  --login-timeout <ms>  Alias for --interaction-timeout
-  --login-poll-interval <ms>
-                        Alias for --interaction-poll-interval
   --timeout <ms>        Page timeout in milliseconds (default: 30000)
   --help                Show help
 
@@ -48,24 +33,12 @@ Examples:
   url-to-markdown https://example.com
   url-to-markdown https://example.com --format markdown --output article.md --download-media
   url-to-markdown https://example.com --format json --output article.json
-  url-to-markdown https://x.com/lennysan/status/2036483059407810640 --wait-for interaction
-  url-to-markdown https://x.com/lennysan/status/2036483059407810640 --wait-for force
+  url-to-markdown https://x.com/lennysan/status/2036483059407810640 --output post.md
 `.trim();
 
 interface CliOptions extends ConvertCommandOptions {
   url?: string;
   help: boolean;
-}
-
-function normalizeWaitMode(raw: string): WaitMode {
-  const value = raw.toLowerCase();
-  if (value === "interaction" || value === "auto") {
-    return "interaction";
-  }
-  if (value === "force" || value === "manual" || value === "always") {
-    return "force";
-  }
-  throw new Error(`Invalid wait mode: ${raw}. Expected interaction or force.`);
 }
 
 function normalizeOutputFormat(raw: string): OutputFormat {
@@ -82,9 +55,6 @@ export function parseArgs(argv: string[]): CliOptions {
     format: "markdown",
     headless: false,
     downloadMedia: false,
-    waitMode: "none",
-    interactionTimeoutMs: 600_000,
-    interactionPollIntervalMs: 1_500,
     timeoutMs: 30_000,
     help: false,
   };
@@ -116,19 +86,6 @@ export function parseArgs(argv: string[]): CliOptions {
     }
     if (value === "--headless") {
       options.headless = true;
-      continue;
-    }
-    if (value === "--wait-for") {
-      const mode = args[index + 1];
-      if (!mode) {
-        throw new Error("--wait-for requires a mode");
-      }
-      options.waitMode = normalizeWaitMode(mode);
-      index += 1;
-      continue;
-    }
-    if (value === "--wait-for-interaction" || value === "--wait-for-login") {
-      options.waitMode = "interaction";
       continue;
     }
     if (value === "--output") {
@@ -172,24 +129,6 @@ export function parseArgs(argv: string[]): CliOptions {
         throw new Error(`Invalid timeout: ${args[index + 1]}`);
       }
       options.timeoutMs = parsed;
-      index += 1;
-      continue;
-    }
-    if (value === "--interaction-timeout" || value === "--login-timeout") {
-      const parsed = Number(args[index + 1]);
-      if (!Number.isFinite(parsed) || parsed <= 0) {
-        throw new Error(`Invalid interaction timeout: ${args[index + 1]}`);
-      }
-      options.interactionTimeoutMs = parsed;
-      index += 1;
-      continue;
-    }
-    if (value === "--interaction-poll-interval" || value === "--login-poll-interval") {
-      const parsed = Number(args[index + 1]);
-      if (!Number.isFinite(parsed) || parsed <= 0) {
-        throw new Error(`Invalid interaction poll interval: ${args[index + 1]}`);
-      }
-      options.interactionPollIntervalMs = parsed;
       index += 1;
       continue;
     }

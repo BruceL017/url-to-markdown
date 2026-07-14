@@ -36,20 +36,7 @@ describe("formatOutputContent", () => {
     expect(parsed.status).toBe("ok");
     expect(parsed.markdown).toBe("# Example");
     expect(parsed.document.url).toBe("https://example.com");
-  });
-
-  test("rejects markdown output for interaction-required payloads", () => {
-    expect(() =>
-      formatOutputContent("markdown", {
-        adapter: "x",
-        status: "needs_interaction",
-        interaction: {
-          type: "wait_for_interaction",
-          kind: "login",
-          provider: "x",
-          prompt: "Login required",
-        },
-      }),
-    ).toThrow("Markdown output is only available");
+    expect(parsed).not.toHaveProperty("login");
+    expect(parsed).not.toHaveProperty("interaction");
   });
 });

@@ -1,6 +1,6 @@
 # url-to-markdown
 
-`url-to-markdown` is a standalone Agent Skill that captures rendered webpages with Chrome CDP and saves clean Markdown or structured JSON. It supports generic pages, X/Twitter posts and threads, YouTube transcripts, Hacker News discussions, media downloads, and visible login or CAPTCHA workflows.
+`url-to-markdown` is a standalone Agent Skill that captures public rendered webpages with Chrome CDP and saves clean Markdown or structured JSON. It supports generic pages, anonymously accessible X/Twitter posts and threads, YouTube transcripts, Hacker News discussions, and media downloads. Login walls and manual verification pages fail without producing an output file.
 
 ## Install
 
@@ -31,6 +31,8 @@ Each URL receives an isolated directory. When media download is enabled, images 
 - Chrome profile override: `URL_TO_MARKDOWN_CHROME_PROFILE_DIR`
 - Adapters: `x`, `youtube`, `hn`, and `generic`
 - Formats: `markdown` and `json`
+
+The CLI never starts a login or manual-verification workflow. Chrome profile and CDP reuse remain available as general browser interfaces, so user-supplied browser state may already contain cookies.
 
 ## Validate
 

@@ -1,5 +1,5 @@
 import type { ExtractedDocument } from "../../extract/document";
-import { detectInteractionGate } from "../../browser/interaction-gates";
+import { assertNoAccessBlock } from "../../browser/access-blocks";
 import {
   buildYouTubeThumbnailCandidates,
   parseYouTubeDescriptionChapters,
@@ -105,11 +105,7 @@ export async function extractYouTubeTranscriptDocument(
   const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
   await context.browser.goto(videoUrl, context.timeoutMs);
 
-  const interaction = await detectInteractionGate(context.browser);
-  if (interaction) {
-    context.log.debug(`Interaction gate detected on YouTube: ${interaction.provider}`);
-    return null;
-  }
+  await assertNoAccessBlock(context.browser);
 
   try {
     await context.network.waitForIdle({

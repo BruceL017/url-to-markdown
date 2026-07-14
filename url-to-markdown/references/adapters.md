@@ -6,7 +6,7 @@ Read when choosing an adapter, handling media, or answering adapter-specific que
 
 | Adapter | URLs | Key Features |
 |---------|------|-------------|
-| `x` | x.com, twitter.com | Tweets, threads, X Articles, media, login detection |
+| `x` | x.com, twitter.com | Anonymously accessible tweets, threads, X Articles, media |
 | `youtube` | youtube.com, youtu.be | Transcript/captions, chapters, cover image, metadata |
 | `hn` | news.ycombinator.com | Threaded comments, story metadata, nested replies |
 | `generic` | Any URL (fallback) | Defuddle extraction, Readability fallback, auto-scroll, network idle detection |
@@ -18,13 +18,13 @@ Adapter is auto-selected based on URL. Override with `--adapter <name>`.
 - Extracts transcripts/captions when available
 - Transcript format: `[MM:SS] Text segment` with chapter headings
 - Availability depends on YouTube exposing a caption track; videos with captions disabled or restricted playback may produce description-only output
-- Use `--wait-for force` if the page needs time to finish loading player metadata
+- Pages that require login or manual verification are unsupported
 
 ### X/Twitter
 
 - Extracts single tweets, threads, and X Articles
-- Auto-detects login state; if logged out and content requires auth, JSON output shows `"status": "needs_interaction"`
-- Use `--wait-for interaction` for login-protected content
+- Supports only content available without initiating login
+- A login or verification wall terminates capture with a non-zero exit
 
 ### Hacker News
 
@@ -72,10 +72,10 @@ Markdown to stdout (or file with `--output`).
 JSON output (`--format json`) returns structured data:
 
 - `adapter` — which adapter handled the URL
-- `status` — `"ok"` or `"needs_interaction"`
-- `login` — login state detection (`logged_in`, `logged_out`, `unknown`)
-- `interaction` — interaction gate details (kind, provider, prompt)
+- `status` — `"ok"` for successful captures
 - `document` — structured content (url, title, author, publishedAt, content blocks, metadata)
 - `media` — collected media assets with url, kind, role
 - `markdown` — converted markdown text
 - `downloads` — media download results (when `--download-media` used)
+
+Login walls, CAPTCHA, Cloudflare, and other manual-verification pages write an error to stderr, exit non-zero, and do not produce Markdown or JSON output files.

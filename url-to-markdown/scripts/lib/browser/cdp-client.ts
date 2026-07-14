@@ -20,7 +20,6 @@ interface CdpCommandResult<T> {
 
 interface CreatePageSessionOptions {
   initialUrl?: string;
-  visible?: boolean;
 }
 
 export class TargetSession extends EventEmitter {
@@ -151,36 +150,21 @@ export class CdpClient {
     return this.sendCommand<T>(method, params, sessionId);
   }
 
-  private async createPageTarget(initialUrl: string, visible = false): Promise<{ targetId: string }> {
-    const attempts: JsonObject[] = visible
-      ? [
-          {
-            url: initialUrl,
-            newWindow: true,
-            focus: true,
-          },
-          {
-            url: initialUrl,
-            focus: true,
-          },
-          {
-            url: initialUrl,
-          },
-        ]
-      : [
-          {
-            url: initialUrl,
-            hidden: true,
-          },
-          {
-            url: initialUrl,
-            background: true,
-            focus: false,
-          },
-          {
-            url: initialUrl,
-          },
-        ];
+  private async createPageTarget(initialUrl: string): Promise<{ targetId: string }> {
+    const attempts: JsonObject[] = [
+      {
+        url: initialUrl,
+        hidden: true,
+      },
+      {
+        url: initialUrl,
+        background: true,
+        focus: false,
+      },
+      {
+        url: initialUrl,
+      },
+    ];
 
     let lastError: unknown;
 
@@ -197,7 +181,7 @@ export class CdpClient {
 
   async createPageSession(options: CreatePageSessionOptions = {}): Promise<TargetSession> {
     const initialUrl = options.initialUrl ?? "about:blank";
-    const created = await this.createPageTarget(initialUrl, Boolean(options.visible));
+    const created = await this.createPageTarget(initialUrl);
     const attached = await this.sendBrowserCommand<{ sessionId: string }>("Target.attachToTarget", {
       targetId: created.targetId,
       flatten: true,
@@ -206,19 +190,9 @@ export class CdpClient {
     const session = new TargetSession(this, created.targetId, attached.sessionId);
     this.sessions.set(attached.sessionId, session);
 
-    if (options.visible) {
-      await this.sendBrowserCommand("Target.activateTarget", {
-        targetId: created.targetId,
-      }).catch(() => {});
-    }
-
     await session.send("Page.enable");
     await session.send("Runtime.enable");
     await session.send("DOM.enable");
-
-    if (options.visible) {
-      await session.send("Page.bringToFront").catch(() => {});
-    }
 
     return session;
   }

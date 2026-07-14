@@ -1,5 +1,5 @@
 import type { Adapter } from "../types";
-import { detectInteractionGate } from "../../browser/interaction-gates";
+import { assertNoAccessBlock } from "../../browser/access-blocks";
 import { captureNormalizedPageSnapshot } from "../../browser/page-snapshot";
 import { convertHtmlToMarkdown } from "../../extract/html-to-markdown";
 
@@ -32,13 +32,7 @@ export const genericAdapter: Adapter = {
       context.log.debug("Network idle timed out after scrolling; continuing.");
     }
 
-    const interaction = await detectInteractionGate(context.browser);
-    if (interaction) {
-      return {
-        status: "needs_interaction",
-        interaction,
-      };
-    }
+    await assertNoAccessBlock(context.browser);
 
     const snapshot = await captureNormalizedPageSnapshot(context.browser);
     const converted = await convertHtmlToMarkdown(snapshot.html, snapshot.finalUrl, {
