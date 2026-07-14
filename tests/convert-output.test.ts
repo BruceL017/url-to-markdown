@@ -1,5 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { formatOutputContent } from "../url-to-markdown/scripts/lib/commands/convert";
+import {
+  formatOutputContent,
+  runConvertCommand,
+} from "../url-to-markdown/scripts/lib/commands/convert";
 
 describe("formatOutputContent", () => {
   test("returns raw markdown for markdown output", () => {
@@ -38,5 +41,18 @@ describe("formatOutputContent", () => {
     expect(parsed.document.url).toBe("https://example.com");
     expect(parsed).not.toHaveProperty("login");
     expect(parsed).not.toHaveProperty("interaction");
+  });
+
+  test("requires an output path when quiet mode is enabled", async () => {
+    await expect(
+      runConvertCommand({
+        url: "https://example.com",
+        format: "markdown",
+        headless: true,
+        quiet: true,
+        downloadMedia: false,
+        timeoutMs: 30_000,
+      }),
+    ).rejects.toThrow("--quiet requires --output");
   });
 });

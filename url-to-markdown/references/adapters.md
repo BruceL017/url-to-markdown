@@ -40,20 +40,20 @@ Treat this workflow as stage 6 of the parent `SKILL.md` TODO and update that sta
 
 | Setting | Behavior |
 |---------|----------|
-| `1` (always) | Run CLI with `--download-media --output <path>` |
-| `0` (never) | Run CLI with `--output <path>` (no media download) |
+| `1` (always) | Run CLI with `--download-media --output <path> --quiet` |
+| `0` (never) | Run CLI with `--output <path> --quiet` (no media download) |
 | `ask` (default) | Follow the ask-each-time flow below |
 
 ### Ask-Each-Time Flow
 
-1. Run the CLI **without** `--download-media` with `--output <path>` → markdown saved
-2. Check the saved markdown for remote media URLs (`https://` in image/video links)
+1. Run the CLI **without** `--download-media` with `--output <path> --quiet` → markdown saved
+2. Check the saved markdown for remote media URLs (`https://` in body image/video links or the Frontmatter `coverImage`)
 3. **If no remote media found** → done, no prompt needed
 4. **If remote media found** → ask via the user-input tool selected by the parent `SKILL.md`:
    - header: "Media", question: "Download N images/videos to local files?"
    - "Yes" — Download to local directories
    - "No" — Keep remote URLs
-5. If the user confirms → run the CLI **again** with `--download-media --output <same-path>` (overwrites markdown with localized links)
+5. If the user confirms → run the CLI **again** with `--download-media --output <same-path> --quiet` (overwrites markdown with localized links)
 
 Failure exit: if the media-enabled rerun fails, report the CLI error and do not claim that the remote links were localized.
 
@@ -67,7 +67,7 @@ When `--download-media` is enabled:
 
 ## Output Format
 
-Markdown to stdout (or file with `--output`).
+Markdown to stdout (or file with `--output`; add `--quiet` to avoid echoing the saved content).
 
 JSON output (`--format json`) returns structured data:
 

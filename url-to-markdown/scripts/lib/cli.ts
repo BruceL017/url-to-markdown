@@ -14,6 +14,7 @@ Usage:
 
 Options:
   --output <file>       Save output to file
+  --quiet               Do not echo captured content to stdout; requires --output
   --format <type>       Output format: markdown | json
   --json                Alias for --format json
   --adapter <name>      Force an adapter (e.g. x, generic)
@@ -31,9 +32,9 @@ Options:
 
 Examples:
   url-to-markdown https://example.com
-  url-to-markdown https://example.com --format markdown --output article.md --download-media
-  url-to-markdown https://example.com --format json --output article.json
-  url-to-markdown https://x.com/lennysan/status/2036483059407810640 --output post.md
+  url-to-markdown https://example.com --format markdown --output article.md --quiet --download-media
+  url-to-markdown https://example.com --format json --output article.json --quiet
+  url-to-markdown https://x.com/lennysan/status/2036483059407810640 --output post.md --quiet
 `.trim();
 
 interface CliOptions extends ConvertCommandOptions {
@@ -54,6 +55,7 @@ export function parseArgs(argv: string[]): CliOptions {
   const options: CliOptions = {
     format: "markdown",
     headless: false,
+    quiet: false,
     downloadMedia: false,
     timeoutMs: 30_000,
     help: false,
@@ -82,6 +84,10 @@ export function parseArgs(argv: string[]): CliOptions {
     }
     if (value === "--download-media") {
       options.downloadMedia = true;
+      continue;
+    }
+    if (value === "--quiet") {
+      options.quiet = true;
       continue;
     }
     if (value === "--headless") {
