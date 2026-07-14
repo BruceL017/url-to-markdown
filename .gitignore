@@ -1,0 +1,5 @@
+.DS_Store
+*.log
+.url-to-markdown/
+**/scripts/node_modules/
+url-to-markdown/chrome-profile/
